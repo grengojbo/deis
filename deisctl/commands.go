@@ -302,7 +302,7 @@ func doInstallService(c *cli.Context) {
 	f, err := client.NewClient("fleet")
 	assert(err)
 	target := []string{"service"}
-	err = f.Install(targets)
+	err = f.Install(target)
 	assert(err)
 }
 
@@ -310,7 +310,7 @@ func doInstallUnit(c *cli.Context) {
 	f, err := client.NewClient("fleet")
 	assert(err)
 	target := []string{"unit"}
-	err = f.Install(targets)
+	err = f.Install(target)
 	assert(err)
 }
 
@@ -318,7 +318,7 @@ func doInstall(c *cli.Context) {
 	f, err := client.NewClient("fleet")
 	assert(err)
 	target := []string{"platform"}
-	err = f.Install(targets)
+	err = f.Install(target)
 	assert(err)
 }
 

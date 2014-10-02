@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/codegangsta/cli"
-	"github.com/grengojbo/deisctl/backend/fleet"
+	"github.com/grengojbo/deis/deisctl/backend/fleet"
 )
 
 func main() {
