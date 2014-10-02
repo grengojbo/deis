@@ -6,14 +6,14 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/grengojbo/deisctl/client"
+	"github.com/grengojbo/deis/deisctl/client"
 	// "github.com/grengojbo/deisctl/utils"
 )
 
 var taskRestart = []string{"service", "platform", "unit"}
 var cliUnit = []string{"unit"}
 
-var DeisDefaulService = []string{"cache", "router", "database", "controller", "registry", "builder"}
+var DeisDefaulService = []string{"publisher", "cache", "router", "database", "controller", "registry", "builder"}
 
 var compRestartUnit = []string{"test_v1", "naxyi_v2", "putin_v3"}
 

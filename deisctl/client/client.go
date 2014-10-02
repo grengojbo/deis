@@ -3,16 +3,16 @@ package client
 import (
 	"errors"
 
-	"github.com/deis/deis/deisctl/backend"
-	"github.com/deis/deis/deisctl/backend/fleet"
-	"github.com/deis/deis/deisctl/cmd"
+	"github.com/grengojbo/deis/deisctl/backend"
+	"github.com/grengojbo/deis/deisctl/backend/fleet"
+	"github.com/grengojbo/deis/deisctl/cmd"
 )
 
 type DeisCtlClient interface {
 	Config() error
 	Install(targets []string) error
 	Journal(targets []string) error
-	List() error
+	List(name string) error
 	RefreshUnits() error
 	Restart(targets []string) error
 	Scale(targets []string) error
@@ -59,8 +59,12 @@ func (c *Client) Journal(targets []string) error {
 	return cmd.Journal(c.Backend, targets)
 }
 
-func (c *Client) List() error {
-	return cmd.ListUnits(c.Backend)
+func (c *Client) List(name string) error {
+	if name == "unit" {
+		return cmd.ListUnits(c.Backend)
+	} else {
+		return cmd.ListServices(c.Backend)
+	}
 }
 
 func (c *Client) RefreshUnits() error {

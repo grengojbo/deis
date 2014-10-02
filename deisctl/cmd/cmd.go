@@ -11,15 +11,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deis/deis/deisctl/backend"
+	"github.com/grengojbo/deis/deisctl/backend"
 	"github.com/deis/deis/deisctl/config"
 	"github.com/deis/deis/deisctl/constant"
 	"github.com/deis/deis/deisctl/update"
 	"github.com/deis/deis/deisctl/utils"
 	"github.com/docopt/docopt-go"
-)
-
-const (
+nst (
 	PlatformInstallCommand string = "platform"
 )
 
@@ -30,6 +28,11 @@ var (
 		"logger-data",
 	}
 )
+
+func ListServices(b backend.Backend) error {
+	err := b.ListServices()
+	return err
+}
 
 func ListUnits(b backend.Backend) error {
 	err := b.ListUnits()
@@ -156,7 +159,7 @@ func Install(b backend.Backend, targets []string) error {
 		return InstallPlatform(b)
 	}
 	// otherwise create the specific targets
-	return b.Create(targets)
+	retueate(targets)
 }
 
 func InstallPlatform(b backend.Backend) error {

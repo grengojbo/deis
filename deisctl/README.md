@@ -40,10 +40,18 @@ If you want to install from source, clone the repository and run
 $ godep get .
 ```
 
+Autocompletion
+
+```console
+$ PROG=deisctl source ~/go/src/github.com/grengojbo/deis/deisctl/autocomplete/bash_autocomplete
+```
+
 Then, export the `DEISCTL_UNITS` environment variable so deisctl can find the units:
 
 ```console
 $ export DEISCTL_UNITS="$PATH_TO_DEISCTL/units"
+OR
+$ export DEISCTL_UNITS="~/.deis/units"
 ```
 
 ## Remote Configuration
@@ -61,6 +69,7 @@ deis-1
 Export the `DEISCTL_TUNNEL` environment variable:
 
 ```console
+$ eval `ssh-agent` && ssh-add ~/.ssh/deis
 $ export DEISCTL_TUNNEL=172.17.8.100
 ```
 

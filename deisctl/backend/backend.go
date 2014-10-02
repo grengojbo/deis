@@ -7,6 +7,7 @@ type Backend interface {
 	Start([]string) error
 	Stop([]string) error
 	Scale(string, int) error
+	ListServices() error
 	ListUnits() error
 	ListUnitFiles() error
 	Status(string) error
