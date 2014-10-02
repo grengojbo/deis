@@ -74,8 +74,8 @@ var (
 	}
 )
 
-// ListUnits prints all Deis-related units to Stdout
-func (c *FleetClient) ListUnits() (err error) {
+// ListServices prints all Deis-related units to Stdout
+func (c *FleetClient) ListServices() (err error) {
 	var sortable sort.StringSlice
 	states := make(map[string]*schema.UnitState, 0)
 
@@ -93,6 +93,57 @@ func (c *FleetClient) ListUnits() (err error) {
 	sortable.Sort()
 	printUnits(states, sortable)
 	return
+}
+
+// ListUnits prints all no Deis-related units to Stdout
+func (c *FleetClient) ListUnits() (err error) {
+	var sortable sort.StringSlice
+	states := make(map[string]*schema.UnitState, 0)
+
+	unitStates, err := cAPI.UnitStates()
+	if err != nil {
+		return err
+	}
+
+	for _, us := range unitStates {
+		// un := strings.Split(us.Name, ".")
+		if ! strings.HasPrefix(us.Name, "deis-") {
+			if us.SystemdActiveState != "deactivating" && us.SystemdSubState != "stop" {
+				if us.SystemdActiveState != "inactive" && us.SystemdSubState != "dead" {
+			states[us.Name] = us
+			sortable = append(sortable, us.Name)
+		}
+			}
+		}
+	}
+	sortable.Sort()
+	printUnits(states, sortable)
+	return
+}
+
+// ListCompletionUnits return all no Deis-related units 
+func (c *FleetClient) ListCompletionUnits() (units []string, err error) {
+	// var sortable sort.StringSlice
+	// states := make(map[string]*schema.UnitState, 0)
+
+	unitStates, err := cAPI.UnitStates()
+	if err != nil {
+		return units, err
+	}
+
+	for _, us := range unitStates {
+		// un := strings.Split(us.Name, ".")
+		// mokh_v10.cmd.1-announce.service
+		// mokh_v10.cmd.1-log.service
+		// mokh_v10.cmd.1.service
+		if ! strings.HasPrefix(us.Name, "deis-") {
+			// states[us.Name] = us
+			units = append(units, us.Name)
+			// sortable = append(sortable, us.Name)
+		}
+	}
+	// sortable.Sort()
+	return units ,nil
 }
 
 func (c *FleetClient) GetLocaljobs() sort.StringSlice {
