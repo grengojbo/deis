@@ -11,13 +11,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grengojbo/deis/deisctl/backend"
 	"github.com/deis/deis/deisctl/config"
 	"github.com/deis/deis/deisctl/constant"
 	"github.com/deis/deis/deisctl/update"
 	"github.com/deis/deis/deisctl/utils"
 	"github.com/docopt/docopt-go"
-nst (
+	"github.com/grengojbo/deis/deisctl/backend"
+)
+
+const (
 	PlatformInstallCommand string = "platform"
 )
 
@@ -159,7 +161,7 @@ func Install(b backend.Backend, targets []string) error {
 		return InstallPlatform(b)
 	}
 	// otherwise create the specific targets
-	retueate(targets)
+	return b.Create(targets)
 }
 
 func InstallPlatform(b backend.Backend) error {
