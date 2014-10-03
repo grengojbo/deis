@@ -55,8 +55,29 @@ var commandStart = cli.Command{
 	Name:  "start",
 	Usage: "[service <service name> | platform | unit <unit name>]",
 	Description: `
+	deisctl start service <publisher | cache | router | database | controller | registry | builder>
+	deisctl start platform
+	deisctl start unit <unit name>
 `,
-	Action: doStart,
+	Subcommands: []cli.Command{
+		// {
+		// 	Name:   "unit",
+		// 	Usage:  "start unit",
+		// BashComplete: bashUnit,
+		// 	Action: doStartUnit,
+		// },
+		{
+			Name:   "platform",
+			Usage:  "start all services",
+			Action: doStart,
+		},
+		{
+			Name:         "service",
+			Usage:        "start only service",
+			BashComplete: bashService,
+			Action:       doStartUnit,
+		},
+	},
 }
 
 var commandRestart = cli.Command{
@@ -91,32 +112,52 @@ var commandStop = cli.Command{
 	Name:  "stop",
 	Usage: "[service <service name> | platform | unit <unit name>]",
 	Description: `
+	deisctl stop service <publisher | cache | router | database | controller | registry | builder>
+	deisctl stop platform
+	deisctl stop unit <unit name>
 `,
 	Subcommands: []cli.Command{
 		// {
 		// 	Name:   "unit",
-		// 	Usage:  "restart only service",
-		// 	Action: doRestart,
+		// 	Usage:  "stop unit",
+		// BashComplete: bashUnit,
+		// 	Action: doStopUnit,
 		// },
 		{
 			Name:   "platform",
-			Usage:  "restart only service",
-			Action: doRestart,
+			Usage:  "stop all services",
+			Action: doStop,
 		},
 		{
-			Name:   "service",
-			Usage:  "restart only service",
-			Action: doRestart,
+			Name:         "service",
+			Usage:        "stop only service",
+			BashComplete: bashService,
+			Action:       doStopUnit,
 		},
 	},
 }
 
 var commandStatus = cli.Command{
 	Name:  "status",
-	Usage: "[service <service name> | platform | unit <unit name>]",
+	Usage: "[service <service name> | unit <unit name>]",
 	Description: `
+	deisctl status service <publisher | cache | router | database | controller | registry | builder>
+	deisctl status unit <unit name>
 `,
-	Action: doStatus,
+	Subcommands: []cli.Command{
+		{
+			Name:         "unit",
+			Usage:        "status unit <unit name>",
+			BashComplete: bashUnit,
+			Action:       doStatus,
+		},
+		{
+			Name:         "service",
+			Usage:        "status service <service name>",
+			BashComplete: bashService,
+			Action:       doStatus,
+		},
+	},
 }
 
 var commandJournal = cli.Command{
@@ -131,9 +172,9 @@ var commandInstall = cli.Command{
 	Name:  "install",
 	Usage: "[service <service name> | platform | unit <unit name>]",
 	Description: `
-	deisctl install service <cache | router | database | controller | registry | builder>
-	deisctl install service platform
-	deisctl install service unit <unit name>
+	deisctl install service <publisher | cache | router | database | controller | registry | builder>
+	deisctl install platform
+	deisctl install unit <unit name>
 `,
 	Subcommands: []cli.Command{
 		{
@@ -151,7 +192,7 @@ var commandInstall = cli.Command{
 			Name:         "service",
 			Usage:        "install services <service name>",
 			BashComplete: bashService,
-			Action:       doInstall,
+			Action:       doInstallService,
 		},
 	},
 	// Action: doInstall,
@@ -263,11 +304,20 @@ func doScale(c *cli.Context) {
 	// assert(err)
 }
 
+func doStartUnit(c *cli.Context) {
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{c.Args().First()}
+	err = f.Start(target)
+	assert(err)
+}
+
 func doStart(c *cli.Context) {
-	// f, err := client.NewClient("fleet")
-	// assert(err)
-	// err = f.Start(targets)
-	// assert(err)
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{"platform"}
+	err = f.Start(target)
+	assert(err)
 }
 
 func doRestart(c *cli.Context) {
@@ -277,18 +327,28 @@ func doRestart(c *cli.Context) {
 	// assert(err)
 }
 
+func doStopUnit(c *cli.Context) {
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{c.Args().First()}
+	err = f.Stop(target)
+	assert(err)
+}
+
 func doStop(c *cli.Context) {
-	// f, err := client.NewClient("fleet")
-	// assert(err)
-	// err = f.Stop(targets)
-	// assert(err)
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{"platform"}
+	err = f.Stop(target)
+	assert(err)
 }
 
 func doStatus(c *cli.Context) {
-	// f, err := client.NewClient("fleet")
-	// assert(err)
-	// err = f.Status(targets)
-	// assert(err)
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{c.Args().First()}
+	err = f.Status(target)
+	assert(err)
 }
 
 func doJournal(c *cli.Context) {
@@ -301,20 +361,22 @@ func doJournal(c *cli.Context) {
 func doInstallService(c *cli.Context) {
 	f, err := client.NewClient("fleet")
 	assert(err)
-	target := []string{"service"}
+	target := []string{c.Args().First()}
+	// fmt.Println("Install service:", target)
 	err = f.Install(target)
 	assert(err)
 }
 
-func doInstallUnit(c *cli.Context) {
-	f, err := client.NewClient("fleet")
-	assert(err)
-	target := []string{"unit"}
-	err = f.Install(target)
-	assert(err)
-}
+// func doInstallUnit(c *cli.Context) {
+// 	f, err := client.NewClient("fleet")
+// 	assert(err)
+// 	target := []string{"unit"}
+// 	err = f.Install(target)
+// 	assert(err)
+// }
 
 func doInstall(c *cli.Context) {
+	// fmt.Println("Install service")
 	f, err := client.NewClient("fleet")
 	assert(err)
 	target := []string{"platform"}
@@ -322,11 +384,20 @@ func doInstall(c *cli.Context) {
 	assert(err)
 }
 
+func doUninstallService(c *cli.Context) {
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{c.Args().First()}
+	err = f.Uninstall(target)
+	assert(err)
+}
+
 func doUninstall(c *cli.Context) {
-	// f, err := client.NewClient("fleet")
-	// assert(err)
-	// err = f.Uninstall(targets)
-	// assert(err)
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{"platform"}
+	err = f.Uninstall(target)
+	assert(err)
 }
 
 func doConfig(c *cli.Context) {
