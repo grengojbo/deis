@@ -32,7 +32,7 @@ fi
 # spawn the service in the background
 mkdir -p /var/lib/redis
 cd /var/lib/redis
-/usr/local/bin/redis-server /etc/redis/redis.conf &
+/app/bin/redis-server /etc/redis/redis.conf &
 SERVICE_PID=$!
 
 # smart shutdown on SIGINT and SIGTERM

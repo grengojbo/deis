@@ -4,6 +4,20 @@ COMPONENT = cache
 IMAGE = $(IMAGE_PREFIX)$(COMPONENT):$(BUILD_TAG)
 DEV_IMAGE = $(DEV_REGISTRY)/$(IMAGE)
 
+check-create:
+	@test -s ./rootfs.tar || { echo "rootfs.tar does not exist! Exiting...";  exit 1; }
+	@sudo chown 1000:1000 rootfs*
+
+create: check-create
+	@sudo docker build -t tarmaker:${COMPONENT} tarmaker
+	@sudo docker run --name builder-${COMPONENT} tarmaker:${COMPONENT}
+	@sudo docker cp builder-${COMPONENT}:/tmp/redis-dist.tar.gz ./
+	@test ! -s ./redis-dist.tar.gz || tar -xzf ./redis-dist.tar.gz
+	@sudo docker build -t ${IMAGE} .
+	@test ! -s ./redis-server || rm ./redis-s*
+	@test ! -s ./redis-cli || rm ./redis-c*
+	@sudo docker rm -f builder-${COMPONENT}
+
 build: check-docker
 	docker build -t $(IMAGE) .
 
