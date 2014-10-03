@@ -13,4 +13,6 @@ H_DOMAIN="<domain>"
 H_RAM=1024
 H_DISK=20
 
+#H_METADATA="region=ua,deis=yes,router=yes,cluster=no,server=vmware02,host=$H_NAME"
+
 # No edit

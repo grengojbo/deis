@@ -68,26 +68,6 @@ coreos:
         ExecStart=/usr/bin/timedatectl set-timezone $H_TZ
         RemainAfterExit=yes
         Type=oneshot
-    - name: lsyncd.service
-      command: start
-      content: |
-        [Unit]
-        Description=lsyncd
-        After=docker.service
-        Requires=docker.service
-
-        [Service]
-        EnvironmentFile=/etc/environment
-        Restart=always
-        RestartSec=10s
-        ExecStartPre=-/usr/bin/docker kill lsyncd
-        ExecStartPre=-/usr/bin/docker rm lsyncd
-        ExecStartPre=/bin/sh -c "IMAGE=grengojbo/lsyncd; docker history $IMAGE >/dev/null 2>&1 || docker pull $IMAGE"
-        ExecStart=/usr/bin/docker run --rm -p 2022:22 -e PUBLISH=22 -e HOST=$COREOS_PRIVATE_IPV4 -e PORT=2022 -v /storage:/storage -v /root:/root --name lsyncd --privileged grengojbo/lsyncd
-        ExecStopPost=/usr/bin/docker stop lsyncd
-
-        [Install]
-        WantedBy=multi-user.target
   etcd:
     name: $H_NAME
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
@@ -109,7 +89,7 @@ coreos:
     #etcd-servers: http://10.0.7.235:4001,http://10.0.7.234:4001,http://10.0.7.233:4001
     #verbosity: 1
     # metadata: region=ua,deis=no,router=no,cluster=yes,server=all
-    metadata: region=ua,deis=no,router=no,cluster=yes,server=vmware02,host=$H_NAME
+    metadata: $H_METADATA
     etcd_request_timeout: 3
 write_files:
   - path: /etc/deis-release
@@ -118,8 +98,8 @@ write_files:
   - path: /etc/environment
     permissions: '0644'
     content: |
-      COREOS_PUBLIC_IPV4=$2
-      COREOS_PRIVATE_IPV4=$3
+      COREOS_PUBLIC_IPV4=$H_IP
+      COREOS_PRIVATE_IPV4=$H_IP
   - path: /etc/resolv.conf
     permissions: '0644'
     content: |
@@ -168,25 +148,6 @@ write_files:
       restrict default nomodify nopeer noquery limited kod
       restrict 127.0.0.1
       restrict [::1]
-  - path: /root/lsyncd.conf
-    content: |
-      settings {
-        logfile    = "/var/log/lsyncd.log",
-        statusFile = "/var/log/lsyncd.status",
-        statusInterval = 10,
-        nodaemon   = true,
-      }
-
-      sync{
-        default.rsync,
-        source = "/storage",
-        target = "127.0.0.1:/storage/nodes",
-        delete = false,
-        maxProcesses = 4,
-        rsync = {
-          rsh = "/usr/bin/ssh -p 22 -o StrictHostKeyChecking=no",
-        }
-      }
 ssh_authorized_keys:
   - $KEY_PUB
 EOF

@@ -189,6 +189,9 @@ if [[ $1 == "gen" ]]; then
     H_TZ="UTC"
   fi
   # echo "KEY_PUB=$KEY_PUB"
+  if [[ -z $H_METADATA ]]; then
+    H_METADATA="region=ua,deis=no,router=no,cluster=yes,server=vmware02,host=$H_NAME"
+  fi
   source cloud_config.sh
   exit 1
 fi
