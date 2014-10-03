@@ -203,7 +203,25 @@ var commandUninstall = cli.Command{
 	Usage: "[service <service name> | platform | unit <unit name>]",
 	Description: `
 `,
-	Action: doUninstall,
+	Subcommands: []cli.Command{
+		// {
+		// 	Name:         "unit",
+		// 	Usage:        "uninstall <unit name>",
+		// 	BashComplete: bashUnit,
+		// 	Action:       doUninstall,
+		// },
+		{
+			Name:   "platform",
+			Usage:  "uninstall platform",
+			Action: doUninstall,
+		},
+		{
+			Name:         "service",
+			Usage:        "uninstall services <service name>",
+			BashComplete: bashService,
+			Action:       doUninstallService,
+		},
+	},
 }
 
 var commandConfig = cli.Command{
