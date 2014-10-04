@@ -1,6 +1,8 @@
 FROM            scratch
 MAINTAINER      MAINTAINER Oleg Dolya "oleg.dolya@gmail.com"
 
+ADD rootfs.tar /
+
 RUN mkdir -p /app/bin
 RUN mkdir -p /data
 RUN mkdir -p /run/redis
@@ -9,8 +11,6 @@ EXPOSE 6379
 WORKDIR /app
 
 VOLUME ["/data"]
-
-ADD rootfs.tar /
 
 ADD bin/test /app/bin/test
 ADD bin/boot /app/bin/boot
@@ -25,7 +25,7 @@ ADD redis-server /app/bin/redis-server
 #ADD timezone /etc/timezone
 
 # install etcdctl
-RUN curl -sSL -o /usr/local/bin/etcdctl https://s3-us-west-2.amazonaws.com/opdemand/etcdctl-v0.4.6 \
+RUN curl -sSL --insecure -o /usr/local/bin/etcdctl https://s3-us-west-2.amazonaws.com/opdemand/etcdctl-v0.4.6 \
     && chmod +x /usr/local/bin/etcdctl
 
 CMD ["/app/bin/boot"]

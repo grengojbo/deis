@@ -3,20 +3,24 @@ include ../includes.mk
 COMPONENT = cache
 IMAGE = $(IMAGE_PREFIX)$(COMPONENT):$(BUILD_TAG)
 DEV_IMAGE = $(DEV_REGISTRY)/$(IMAGE)
+DEV_UID = 1000
 
 check-create:
-	@test -s ./rootfs.tar || { echo "rootfs.tar does not exist! Exiting...";  exit 1; }
-	@sudo chown 1000:1000 rootfs*
+	@test -s ../rootfs.tar || { echo "rootfs.tar does not exist! Exiting...";  exit 1; }
+	@test -s ./rootfs.tar || { echo "Copy rootfs.tar";  cp ../rootfs.tar ./; }
+	@sudo chown $(DEV_UID):$(DEV_UID) rootfs*
 
 create: check-create
-	@sudo docker build -t tarmaker:${COMPONENT} tarmaker
-	@sudo docker run --name builder-${COMPONENT} tarmaker:${COMPONENT}
-	@sudo docker cp builder-${COMPONENT}:/tmp/redis-dist.tar.gz ./
+	@sudo docker build -t tarmaker:$(COMPONENT) tarmaker
+	@sudo docker run --name builder-$(COMPONENT) tarmaker:$(COMPONENT)
+	@sudo docker cp builder-$(COMPONENT):/tmp/redis-dist.tar.gz ./
 	@test ! -s ./redis-dist.tar.gz || tar -xzf ./redis-dist.tar.gz
-	@sudo docker build -t ${IMAGE} .
+	@sudo docker build -t grengojbo/$(COMPONENT):latest .
 	@test ! -s ./redis-server || rm ./redis-s*
 	@test ! -s ./redis-cli || rm ./redis-c*
-	@sudo docker rm -f builder-${COMPONENT}
+	@test ! -s ./rootfs.tar || rm ./rootfs.tar
+	@test ! -s ./redis-dist.tar.gz || rm -rf ./redis-dist.tar.gz
+	@sudo docker rm -f builder-$(COMPONENT)
 
 build: check-docker
 	docker build -t $(IMAGE) .

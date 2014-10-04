@@ -9,8 +9,7 @@ RUN apt-get update && apt-get install -y curl
 RUN buildDeps='gcc libc6-dev make'; \
     set -x; \
     apt-get update && apt-get install -y $buildDeps net-tools --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* \
-    mkdir -p /usr/src/redis \
+    && mkdir -p /usr/src/redis \
     && mkdir -p /app \
     && mkdir -p /tmp/rootfs \
     && cd /usr/src \
