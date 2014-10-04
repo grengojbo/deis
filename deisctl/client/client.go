@@ -9,7 +9,8 @@ import (
 )
 
 type DeisCtlClient interface {
-	Config() error
+	Config(root string, targets []string) error
+	ConfigSet(root string, key string, target string) error
 	Install(targets []string) error
 	Journal(targets []string) error
 	List(name string) error
@@ -47,8 +48,12 @@ func NewClient(requestedBackend string) (*Client, error) {
 	return &Client{Backend: backend}, nil
 }
 
-func (c *Client) Config() error {
-	return cmd.Config()
+func (c *Client) Config(root string, targets []string) error {
+	return cmd.Config(root, targets)
+}
+
+func (c *Client) ConfigSet(root string, key string, target string) error {
+	return cmd.ConfigSet(root, key, target)
 }
 
 func (c *Client) Install(targets []string) error {

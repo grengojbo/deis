@@ -226,10 +226,26 @@ var commandUninstall = cli.Command{
 
 var commandConfig = cli.Command{
 	Name:  "config",
-	Usage: "<component> <get|set> <args>",
+	Usage: "<get|set> <service name> <args>",
 	Description: `
+	deisctl config get <service name> <key>
+	deisctl config set <service name> <key> <value>
 `,
-	Action: doConfig,
+	Subcommands: []cli.Command{
+		{
+			Name:         "get",
+			Usage:        "get service option",
+			BashComplete: bashService,
+			Action:       doConfig,
+		},
+		{
+			Name:         "set",
+			Usage:        "setting service option",
+			BashComplete: bashService,
+			Action:       doConfigSet,
+		},
+	},
+	// verbose
 }
 
 var commandUpdate = cli.Command{
@@ -419,9 +435,34 @@ func doUninstall(c *cli.Context) {
 }
 
 func doConfig(c *cli.Context) {
+	cliConfigParam := []string{"host", "post"}
+
 	f, err := client.NewClient("fleet")
 	assert(err)
-	err = f.Config()
+	// fmt.Println("count: ", len(c.Args()))
+	if len(c.Args()) == 1 {
+		// fmt.Println("Просмотр всех параметров пока не реализовано")
+		for _, t := range cliConfigParam {
+			fmt.Println(t)
+		}
+		return
+	}
+	if len(c.Args()) == 2 {
+		// fmt.Println("param:", c.Args().Get(1))
+		targets := []string{c.Args().Get(1)}
+		err = f.Config(c.Args().First(), targets)
+		assert(err)
+	}
+}
+
+func doConfigSet(c *cli.Context) {
+	f, err := client.NewClient("fleet")
+	// fmt.Println("count: ", len(c.Args()))
+	assert(err)
+	if len(c.Args()) < 3 {
+		return
+	}
+	err = f.ConfigSet(c.Args().First(), c.Args().Get(1), c.Args().Get(2))
 	assert(err)
 }
 

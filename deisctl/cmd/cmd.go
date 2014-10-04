@@ -11,12 +11,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deis/deis/deisctl/config"
 	"github.com/deis/deis/deisctl/constant"
 	"github.com/deis/deis/deisctl/update"
 	"github.com/deis/deis/deisctl/utils"
 	"github.com/docopt/docopt-go"
 	"github.com/grengojbo/deis/deisctl/backend"
+	"github.com/grengojbo/deis/deisctl/config"
 )
 
 const (
@@ -253,8 +253,15 @@ func splitScaleTarget(target string) (c string, num int, err error) {
 	return
 }
 
-func Config() error {
-	if err := config.Config(); err != nil {
+func Config(root string, targets []string) error {
+	if err := config.Config(root, targets); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ConfigSet(root string, key string, target string) error {
+	if err := config.ConfigSet(root, key, target); err != nil {
 		return err
 	}
 	return nil
