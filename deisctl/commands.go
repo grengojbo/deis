@@ -13,7 +13,7 @@ import (
 var taskRestart = []string{"service", "platform", "unit"}
 var cliUnit = []string{"unit"}
 
-var DeisDefaulService = []string{"publisher", "cache", "router", "database", "controller", "registry", "builder"}
+var DeisDefaulService = []string{"publisher", "cache", "logger@", "router", "database", "controller", "registry", "builder"}
 
 var compRestartUnit = []string{"test_v1", "naxyi_v2", "putin_v3"}
 
@@ -90,20 +90,22 @@ var commandRestart = cli.Command{
 `,
 	// BashComplete: taskRestart,
 	Subcommands: []cli.Command{
-		{
-			Name:   "unit",
-			Usage:  "restart only service",
-			Action: doRestart,
-		},
+		// {
+		// 	Name:   "unit",
+		// 	Usage:  "restart only service",
+		// BashComplete: bashUnit,
+		// 	Action: doRestartUnit,
+		// },
 		{
 			Name:   "platform",
-			Usage:  "restart only service",
+			Usage:  "restart all services",
 			Action: doRestart,
 		},
 		{
-			Name:   "service",
-			Usage:  "restart only service",
-			Action: doRestart,
+			Name:         "service",
+			Usage:        "restart only service",
+			BashComplete: bashService,
+			Action:       doRestartUnit,
 		},
 	},
 }
@@ -354,11 +356,20 @@ func doStart(c *cli.Context) {
 	assert(err)
 }
 
+func doRestartUnit(c *cli.Context) {
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{c.Args().First()}
+	err = f.Restart(target)
+	assert(err)
+}
+
 func doRestart(c *cli.Context) {
-	// f, err := client.NewClient("fleet")
-	// assert(err)
-	// err = f.Restart(targets)
-	// assert(err)
+	f, err := client.NewClient("fleet")
+	assert(err)
+	target := []string{"platform"}
+	err = f.Restart(target)
+	assert(err)
 }
 
 func doStopUnit(c *cli.Context) {
