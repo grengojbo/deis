@@ -1,0 +1,18 @@
+[Unit]
+Description=deis-cadvisor
+Requires=docker.socket etcd.service
+After=docker.socket etcd.service
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=20m
+ExecStartPre=-/usr/bin/docker pull google/cadvisor:latest
+ExecStartPre=/bin/sh -c "docker inspect deis-cadvisor >/dev/null && docker rm -f deis-cadvisor || true"
+ExecStart=/usr/bin/docker run --volume=/var/run:/var/run:rw --volume=/sys:/sys:ro --volume=/var/lib/docker/:/var/lib/docker:ro --publish=8080:8080 --detach=true --name deis-cadvisor -e HOST=$COREOS_PRIVATE_IPV4 -e ETCD_HOST=$COREOS_PRIVATE_IPV4 google/cadvisor:latest
+ExecStopPost=/usr/bin/docker stop deis-cadvisor
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+Global=true

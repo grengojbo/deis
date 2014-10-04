@@ -13,7 +13,7 @@ import (
 var taskRestart = []string{"service", "platform", "unit"}
 var cliUnit = []string{"unit"}
 
-var DeisDefaulService = []string{"publisher", "cache", "logger@", "router", "database", "controller", "registry", "builder"}
+var DeisDefaulService = []string{"publisher", "cache@", "logger@", "router@", "database@", "controller@", "registry@", "builder@", "cadvisor"}
 
 var compRestartUnit = []string{"test_v1", "naxyi_v2", "putin_v3"}
 

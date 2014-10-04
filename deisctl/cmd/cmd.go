@@ -161,6 +161,7 @@ func Install(b backend.Backend, targets []string) error {
 		return InstallPlatform(b)
 	}
 	// otherwise create the specific targets
+	fmt.Println("Installing ", targets[0], " ...")
 	return b.Create(targets)
 }
 
