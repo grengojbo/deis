@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -yq \
     aufs-tools iptables lxc \
     lxc-docker-1.2.0
 
+# install jq for parsing json
+RUN curl http://stedolan.github.io/jq/download/linux64/jq > /usr/bin/jq && chmod 755 /usr/bin/jq
+
 # configure ssh server
 RUN rm /etc/ssh/ssh_host_*
 RUN dpkg-reconfigure openssh-server
@@ -50,7 +53,7 @@ RUN echo "%git    ALL=(ALL:ALL) NOPASSWD:/home/git/builder" >> /etc/sudoers
 # HACK: import progrium/cedarish as a tarball
 # see https://github.com/deis/deis/issues/1027
 RUN curl -#SL -o /progrium_cedarish.tar \
-    https://s3-us-west-2.amazonaws.com/opdemand/progrium_cedarish_cedar.tar
+    https://s3-us-west-2.amazonaws.com/opdemand/progrium_cedarish_2014_10_01.tar
 
 # define the execution environment
 # use VOLUME to remove /var/lib/docker from copy-on-write for performance
@@ -60,9 +63,9 @@ WORKDIR /app
 ENTRYPOINT ["/app/bin/entry"]
 CMD ["/app/bin/boot"]
 EXPOSE 22
-
 RUN addgroup --quiet --gid 2000 slug && useradd slug --uid=2000 --gid=2000
 
+ADD templates/shim.dockerfile /home/git/
 ADD . /app
 ADD sshd_config /etc/ssh/sshd_config
 RUN chown -R root:root /app

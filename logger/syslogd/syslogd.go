@@ -1,15 +1,16 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"github.com/deis/deis/logger/syslog"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"path"
 	"regexp"
 	"syscall"
+
+	"github.com/deis/deis/logger/syslog"
 )
 
 const logRoot = "/var/log/deis"
@@ -21,8 +22,7 @@ type handler struct {
 }
 
 // Simple fiter for named/bind messages which can be used with BaseHandler
-func filter(m *syslog.Message) bool {
-	// return m.Tag == "named" || m.Tag == "bind"
+func filter(m syslog.SyslogMessage) bool {
 	return true
 }
 
@@ -44,11 +44,11 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func getLogFile(m *syslog.Message) (io.Writer, error) {
-	r := regexp.MustCompile(`^.* ([-a-z0-9]+)\[[a-z0-9\.]+\].*`)
-	match := r.FindStringSubmatch(m.String())
+func getLogFile(message string) (io.Writer, error) {
+	r := regexp.MustCompile(`^.* ([-a-z0-9]+)\[[a-z0-9-_\.]+\].*`)
+	match := r.FindStringSubmatch(message)
 	if match == nil {
-		return nil, errors.New("Could not find app name in message")
+		return nil, fmt.Errorf("Could not find app name in message: %s", message)
 	}
 	appName := match[1]
 	filePath := path.Join(logRoot, appName+".log")
@@ -67,8 +67,8 @@ func getLogFile(m *syslog.Message) (io.Writer, error) {
 	return file, err
 }
 
-func writeToDisk(m *syslog.Message) error {
-	file, err := getLogFile(m)
+func writeToDisk(m syslog.SyslogMessage) error {
+	file, err := getLogFile(m.String())
 	if err != nil {
 		return err
 	}
@@ -84,13 +84,11 @@ func (h *handler) mainLoop() {
 		if m == nil {
 			break
 		}
-		fmt.Println(m)
 		err := writeToDisk(m)
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
 	}
-	fmt.Println("Exit handler")
 	h.End()
 }
 
@@ -106,7 +104,6 @@ func main() {
 	<-sc
 
 	// Shutdown the server
-	fmt.Println("Shutdown the server...")
+	fmt.Println("Shutting down...")
 	s.Shutdown()
-	fmt.Println("Server is down")
 }

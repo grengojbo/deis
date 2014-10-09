@@ -12,7 +12,8 @@ set -eo pipefail
 # configure etcd
 export ETCD_PORT=${ETCD_PORT:-4001}
 export ETCD="$HOST:$ETCD_PORT"
-export ETCD_PATH=${ETCD_PATH:-/deis/router/$HOST}
+export ETCD_PATH=${ETCD_PATH:-/deis/router}
+export HOST_ETCD_PATH=${HOST_ETCD_PATH:-/deis/router/$HOST}
 export ETCD_TTL=${ETCD_TTL:-10}
 
 # wait for etcd to be available
@@ -36,24 +37,18 @@ etcd_safe_mkdir /deis/controller
 etcd_safe_mkdir /deis/services
 etcd_safe_mkdir /deis/domains
 etcd_safe_mkdir /deis/builder
-etcd_set_default port ${PORT:-80}
 etcd_set_default gzip on
-etcd_set_default gzipHttpVersion 1.0
-etcd_set_default gzipCompLevel 2
+etcd_set_default gzipHttpVersion 1.1
+etcd_set_default gzipCompLevel 5
+etcd_set_default gzipMinLength 256
 etcd_set_default gzipProxied any
 etcd_set_default gzipVary on
 etcd_set_default gzipDisable "\"msie6\""
-etcd_set_default gzipTypes "application/x-javascript application/xhtml+xml application/xml application/xml+rss application/json text/css text/javascript text/plain text/xml"
-
-# wait for confd to run once and install initial templates
-until confd -onetime -node $ETCD -config-file /app/confd.toml >/dev/null 2>/dev/null; do
-    echo "router: waiting for confd to write initial templates..."
-    sleep $(($ETCD_TTL/2))  # sleep for half the TTL
-done
+etcd_set_default gzipTypes "application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/plain text/x-component"
 
 # spawn the service in the background
 echo "Starting Nginx..."
-/usr/sbin/nginx &
+/opt/nginx/sbin/nginx &
 SERVICE_PID=$!
 
 # smart shutdown on SIGINT and SIGTERM
@@ -63,6 +58,12 @@ function on_exit() {
     exit 0
 }
 trap on_exit INT TERM
+
+# wait for confd to run once and install initial templates
+until confd -onetime -node $ETCD -config-file /app/confd.toml >/dev/null 2>/dev/null; do
+    echo "router: waiting for confd to write initial templates..."
+    sleep $(($ETCD_TTL/2))  # sleep for half the TTL
+done
 
 # spawn confd in the background to update services based on etcd changes
 confd -node $ETCD -config-file /app/confd.toml &
@@ -84,8 +85,8 @@ if [[ ! -z $EXTERNAL_PORT ]]; then
 
   # while the port is listening, publish to etcd
   while [[ ! -z $(netstat -lnt | awk "\$6 == \"LISTEN\" && \$4 ~ \".$PORT\" && \$1 ~ \"$PROTO.?\"") ]] ; do
-    etcdctl --no-sync -C $ETCD set $ETCD_PATH/host $HOST --ttl $ETCD_TTL >/dev/null
-    etcdctl --no-sync -C $ETCD set $ETCD_PATH/port $EXTERNAL_PORT --ttl $ETCD_TTL >/dev/null
+    etcdctl --no-sync -C $ETCD set $HOST_ETCD_PATH/host $HOST --ttl $ETCD_TTL >/dev/null
+    etcdctl --no-sync -C $ETCD set $HOST_ETCD_PATH/port $EXTERNAL_PORT --ttl $ETCD_TTL >/dev/null
     sleep $(($ETCD_TTL/2)) # sleep for half the TTL
   done
 

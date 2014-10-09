@@ -75,7 +75,6 @@ func main() {
 		fleet.Flags.RequestTimeout = timeout
 		tunnel := c.GlobalString("tunnel")
 		if tunnel != "" {
-			// fmt.Println("Set tunnel ...")
 			fleet.Flags.Tunnel = tunnel
 		} else {
 			fleet.Flags.Tunnel = os.Getenv("DEISCTL_TUNNEL")

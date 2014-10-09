@@ -1,7 +1,6 @@
 import cStringIO
 import base64
 import copy
-import functools
 import json
 import httplib
 import paramiko
@@ -11,7 +10,8 @@ import time
 
 
 MATCH = re.compile(
-    '(?P<app>[a-z0-9-]+)_?(?P<version>v[0-9]+)?\.?(?P<c_type>[a-z]+)?.(?P<c_num>[0-9]+)')
+    '(?P<app>[a-z0-9-]+)_?(?P<version>v[0-9]+)?\.?(?P<c_type>[a-z-_]+)?.(?P<c_num>[0-9]+)')
+RETRIES = 3
 
 
 class UHTTPConnection(httplib.HTTPConnection):
@@ -55,7 +55,7 @@ class FleetHTTPClient(object):
                           headers=headers, body=json.dumps(body))
         resp = self.conn.getresponse()
         data = resp.read()
-        if resp.status != 204:
+        if not 200 <= resp.status <= 299:
             errmsg = "Failed to create unit: {} {} - {}".format(
                 resp.status, resp.reason, data)
             raise RuntimeError(errmsg)
@@ -105,7 +105,6 @@ class FleetHTTPClient(object):
         """Create a container"""
         self._create_container(name, image, command,
                                template or copy.deepcopy(CONTAINER_TEMPLATE), **kwargs)
-        self._create_log(name, image, command, copy.deepcopy(LOG_TEMPLATE))
 
     def _create_container(self, name, image, command, unit, **kwargs):
         l = locals().copy()
@@ -122,6 +121,10 @@ class FleetHTTPClient(object):
             l.update({'cpu': '-c {}'.format(cpu)})
         else:
             l.update({'cpu': ''})
+        # should a special entrypoint be used
+        entrypoint = kwargs.get('entrypoint')
+        if entrypoint:
+            l.update({'entrypoint': '{}'.format(entrypoint)})
         # construct unit from template
         for f in unit:
             f['value'] = f['value'].format(**l)
@@ -131,23 +134,21 @@ class FleetHTTPClient(object):
             tagset = ' '.join(['"{}={}"'.format(k, v) for k, v in tags.items()])
             unit.append({"section": "X-Fleet", "name": "MachineMetadata",
                          "value": tagset})
-        # post unit to fleet
-        self._put_unit(name, {"desiredState": "launched", "options": unit})
-
-    def _create_log(self, name, image, command, unit):
-        l = locals().copy()
-        l.update(re.match(MATCH, name).groupdict())
-        # construct unit from template
-        for f in unit:
-            f['value'] = f['value'].format(**l)
-        # post unit to fleet
-        self._put_unit(name+'-log', {"desiredState": "launched", "options": unit})
+        # post unit to fleet and retry
+        for attempt in range(RETRIES):
+            try:
+                self._put_unit(name, {"desiredState": "launched", "options": unit})
+                break
+            except:
+                if attempt == (RETRIES - 1):  # account for 0 indexing
+                    raise
 
     def start(self, name):
         """Start a container"""
         self._wait_for_container(name)
 
     def _wait_for_container(self, name):
+        failures = 0
         # we bump to 20 minutes here to match the timeout on the router and in the app unit files
         for _ in range(1200):
             states = self._get_state(name)
@@ -157,10 +158,13 @@ class FleetHTTPClient(object):
                 if subState == 'running' or subState == 'exited':
                     break
                 elif subState == 'failed':
-                    raise RuntimeError('container failed to start')
+                    # FIXME: fleet unit state reports failed when containers are fine
+                    failures += 1
+                    if failures == 10:
+                        raise RuntimeError('container failed to start')
             time.sleep(1)
         else:
-            raise RuntimeError('container failed to start')
+            raise RuntimeError('container timeout on start')
 
     def _wait_for_destroy(self, name):
         for _ in range(30):
@@ -177,26 +181,26 @@ class FleetHTTPClient(object):
 
     def destroy(self, name):
         """Destroy a container"""
-        funcs = []
-        funcs.append(functools.partial(self._destroy_container, name))
-        funcs.append(functools.partial(self._destroy_log, name))
         # call all destroy functions, ignoring any errors
-        for f in funcs:
-            try:
-                f()
-            except:
-                pass
+        try:
+            self._destroy_container(name)
+        except:
+            pass
         self._wait_for_destroy(name)
 
     def _destroy_container(self, name):
-        return self._delete_unit(name)
+        for attempt in range(RETRIES):
+            try:
+                self._delete_unit(name)
+                break
+            except:
+                if attempt == (RETRIES - 1):  # account for 0 indexing
+                    raise
 
-    def _destroy_log(self, name):
-        return self._delete_unit(name+'-log')
-
-    def run(self, name, image, command):  # noqa
+    def run(self, name, image, entrypoint, command):  # noqa
         """Run a one-off command"""
-        self._create_container(name, image, command, copy.deepcopy(RUN_TEMPLATE))
+        self._create_container(name, image, command, copy.deepcopy(RUN_TEMPLATE),
+                               entrypoint=entrypoint)
 
         # wait for the container to get scheduled
         for _ in range(30):
@@ -299,16 +303,8 @@ CONTAINER_TEMPLATE = [
     {"section": "Service", "name": "ExecStart", "value": '''/bin/sh -c "IMAGE=$(etcdctl get /deis/registry/host 2>&1):$(etcdctl get /deis/registry/port 2>&1)/{image}; port=$(docker inspect -f '{{{{range $k, $v := .ContainerConfig.ExposedPorts }}}}{{{{$k}}}}{{{{end}}}}' $IMAGE | cut -d/ -f1) ; docker run --name {name} {memory} {cpu} -P -e PORT=$port $IMAGE {command}"'''},  # noqa
     {"section": "Service", "name": "ExecStop", "value": '''/usr/bin/docker rm -f {name}'''},
     {"section": "Service", "name": "TimeoutStartSec", "value": "20m"},
-]
-
-
-LOG_TEMPLATE = [
-    {"section": "Unit", "name": "Description", "value": "{name} log"},
-    {"section": "Unit", "name": "BindsTo", "value": "{name}.service"},
-    {"section": "Service", "name": "ExecStartPre", "value": '''/bin/sh -c "until docker inspect {name} >/dev/null 2>&1; do sleep 1; done"'''},  # noqa
-    {"section": "Service", "name": "ExecStart", "value": '''/bin/sh -c "docker logs -f {name} 2>&1 | logger -p local0.info -t {app}[{c_type}.{c_num}] --udp --server $(etcdctl get /deis/logs/host) --port $(etcdctl get /deis/logs/port)"'''},  # noqa
-    {"section": "Service", "name": "TimeoutStartSec", "value": "20m"},
-    {"section": "X-Fleet", "name": "MachineOf", "value": "{name}.service"},
+    {"section": "Service", "name": "RestartSec", "value": "5"},
+    {"section": "Service", "name": "Restart", "value": "on-failure"},
 ]
 
 
@@ -316,6 +312,6 @@ RUN_TEMPLATE = [
     {"section": "Unit", "name": "Description", "value": "{name} admin command"},
     {"section": "Service", "name": "ExecStartPre", "value": '''/bin/sh -c "IMAGE=$(etcdctl get /deis/registry/host 2>&1):$(etcdctl get /deis/registry/port 2>&1)/{image}; docker pull $IMAGE"'''},  # noqa
     {"section": "Service", "name": "ExecStartPre", "value": '''/bin/sh -c "docker inspect {name} >/dev/null 2>&1 && docker rm -f {name} || true"'''},  # noqa
-    {"section": "Service", "name": "ExecStart", "value": '''/bin/sh -c "IMAGE=$(etcdctl get /deis/registry/host 2>&1):$(etcdctl get /deis/registry/port 2>&1)/{image}; docker run --name {name} --entrypoint=/bin/bash -a stdout -a stderr $IMAGE -c '{command}'"'''},  # noqa
+    {"section": "Service", "name": "ExecStart", "value": '''/bin/sh -c "IMAGE=$(etcdctl get /deis/registry/host 2>&1):$(etcdctl get /deis/registry/port 2>&1)/{image}; docker run --name {name} --entrypoint={entrypoint} -a stdout -a stderr $IMAGE {command}"'''},  # noqa
     {"section": "Service", "name": "TimeoutStartSec", "value": "20m"},
 ]

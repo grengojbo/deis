@@ -74,7 +74,7 @@ func buildsListTest(t *testing.T, params *utils.DeisTestConfig) {
 // to promote a build from an existing docker image.
 func buildsCreateTest(t *testing.T, params *utils.DeisTestConfig) {
 	params.AppName = "deispullsample"
-	params.ImageID = "deis/example-dockerfile-python:latest"
+	params.ImageID = "deis/example-go:latest"
 	params.ExampleApp = "example-deis-pull"
 	if err := os.Mkdir(params.ExampleApp, 0755); err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func buildsCreateTest(t *testing.T, params *utils.DeisTestConfig) {
 	if err := utils.Chdir(params.ExampleApp); err != nil {
 		t.Fatal(err)
 	}
-	utils.Execute(t, appsCreateCmd, params, false, "")
+	utils.Execute(t, appsCreateCmdNoRemote, params, false, "")
 	utils.Execute(t, buildsCreateCmd, params, false, "")
 	if err := utils.Chdir(".."); err != nil {
 		t.Fatal(err)

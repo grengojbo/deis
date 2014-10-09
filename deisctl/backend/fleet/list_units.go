@@ -86,12 +86,10 @@ func (c *FleetClient) ListServices() (err error) {
 
 	for _, us := range unitStates {
 		if strings.HasPrefix(us.Name, "deis-") {
-			states[us.Name] = us
-			sortable = append(sortable, us.Name)
+			states = append(states, us)
 		}
 	}
-	sortable.Sort()
-	printUnits(states, sortable)
+	printUnits(states)
 	return
 }
 
@@ -161,7 +159,7 @@ func (c *FleetClient) GetLocaljobs() sort.StringSlice {
 }
 
 // printUnits writes units to stdout using a tabwriter
-func printUnits(states map[string]*schema.UnitState, sortable sort.StringSlice) {
+func printUnits(states []*schema.UnitState) {
 	cols := strings.Split(defaultListUnitsFields, ",")
 	for _, s := range cols {
 		if _, ok := listUnitsFields[s]; !ok {
@@ -169,9 +167,8 @@ func printUnits(states map[string]*schema.UnitState, sortable sort.StringSlice) 
 		}
 	}
 	fmt.Fprintln(out, strings.ToUpper(strings.Join(cols, "\t")))
-	for _, name := range sortable {
+	for _, us := range states {
 		var f []string
-		us := states[name]
 		for _, c := range cols {
 			f = append(f, listUnitsFields[c](us, false))
 		}

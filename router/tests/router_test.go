@@ -13,10 +13,12 @@ import (
 func TestRouter(t *testing.T) {
 	var err error
 	setkeys := []string{
-		"deis/controller/host",
+		"/deis/controller/host",
 		"/deis/controller/port",
 		"/deis/builder/host",
 		"/deis/builder/port",
+		"/deis/store/gateway/host",
+		"/deis/store/gateway/port",
 	}
 	setdir := []string{
 		"/deis/controller",
@@ -25,6 +27,7 @@ func TestRouter(t *testing.T) {
 		"/deis/services",
 		"/deis/builder",
 		"/deis/domains",
+		"/deis/store",
 	}
 	tag, etcdPort := utils.BuildTag(), utils.RandomPort()
 	etcdName := "deis-etcd-" + tag
@@ -56,7 +59,8 @@ func TestRouter(t *testing.T) {
 	// FIXME: Wait until etcd keys are published
 	time.Sleep(5000 * time.Millisecond)
 	dockercli.DeisServiceTest(t, name, port, "http")
-	routerKeyPrefix := "/deis/router/"+host
+	etcdutils.VerifyEtcdValue(t, "/deis/router/gzip", "on", etcdPort)
+	routerKeyPrefix := "/deis/router/" + host
 	etcdutils.VerifyEtcdValue(t, routerKeyPrefix+"/host", host, etcdPort)
 	etcdutils.VerifyEtcdValue(t, routerKeyPrefix+"/port", port, etcdPort)
 	_ = cli.CmdRm("-f", name)

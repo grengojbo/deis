@@ -9,11 +9,11 @@
 To install the latest `deisctl` on Linux or Mac OS X, run this command:
 
 ```console
-$ curl -sSL http://deis.io/deisctl/install.sh | sudo sh
+$ curl -sSL http://deis.io/deisctl/install.sh | sh
 ```
 
-The installer puts `deisctl` in */usr/local/bin* and downloads current Deis unit files
-to */var/lib/deis/units* one time.
+The installer puts `deisctl` in your current directory and downloads current Deis unit files
+to *$HOME/.deis/units* one time. You should move `deisctl` somewhere in your $PATH.
 
 To change installation options, save the installer directly from one of these links:
 
@@ -54,6 +54,10 @@ OR
 $ export DEISCTL_UNITS="~/.deis/units"
 ```
 
+This is also useful for specifying custom behavior on Deis units, such as using
+fleet metadata to lock the builder to a more powerful node, or keep application
+nodes free of control plane elements.
+
 ## Remote Configuration
 
 While `deisctl` can be used locally on a CoreOS host, it is extremely useful as a tool
@@ -85,8 +89,6 @@ $ deisctl install platform
 ▴ ■ ●
 
 Scheduling data containers...
-deis-database-data.service: loaded
-deis-registry-data.service: loaded
 deis-logger-data.service: loaded
 Data containers scheduled.
 Scheduling service containers...
@@ -107,8 +109,6 @@ $ deisctl start platform
 ▴ ■ ●
 
 Launching data containers...
-deis-database-data.service: exited
-deis-registry-data.service: exited
 deis-logger-data.service: exited
 Data containers launched.
 Launching service containers...
@@ -169,11 +169,9 @@ UNIT				MACHINE				LOAD	ACTIVE	SUB
 deis-builder@1.service		f936b7a5.../172.17.8.100	loaded	active	running
 deis-cache@1.service		f936b7a5.../172.17.8.100	loaded	active	running
 deis-controller@1.service	f936b7a5.../172.17.8.100	loaded	active	running
-deis-database-data.service	f936b7a5.../172.17.8.100	loaded	active	exited
 deis-database@1.service		f936b7a5.../172.17.8.100	loaded	active	running
 deis-logger-data.service	f936b7a5.../172.17.8.100	loaded	active	exited
 deis-logger@1.service		f936b7a5.../172.17.8.100	loaded	active	running
-deis-registry-data.service	f936b7a5.../172.17.8.100	loaded	active	exited
 deis-registry@1.service		f936b7a5.../172.17.8.100	loaded	active	running
 deis-router@1.service		f936b7a5.../172.17.8.100	loaded	active	running
 ```
