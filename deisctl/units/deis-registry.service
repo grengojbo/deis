@@ -11,3 +11,6 @@ ExecStopPost=-/usr/bin/docker stop deis-registry
 
 [Install]
 WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=deis=yes

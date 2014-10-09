@@ -10,3 +10,6 @@ ExecStart=/bin/sh -c "IMAGE=`/run/deis/bin/get_image /deis/store-gateway` && doc
 
 [Install]
 WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=deis=yes

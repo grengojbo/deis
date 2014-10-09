@@ -14,3 +14,4 @@ WantedBy=multi-user.target
 
 [X-Fleet]
 Conflicts=deis-router@*.service
+MachineMetadata=router=yes
